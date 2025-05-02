@@ -1,0 +1,2 @@
+event_time,event_type,product_id,category_id,category_code,brand,price,user_id,user_session,category,product,day,hour,weekday,needs_prediction
+2019-09-30 22:23:25,purchase,1005135,,electronics.smartphone,apple,1747.79,515384420,7f82b450-6c45-4346-96fb-ecf4ab25779c,electronics,smartphone,30,22,0,False

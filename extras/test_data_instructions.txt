@@ -1,0 +1,18 @@
+
+INSTRUCTIONS FOR USING THE TEST DATA
+
+The test_data_for_model.csv file contains:
+1. All cart events from your original data (these are what you want predictions for)
+2. A few view and purchase events to satisfy the model's encoding requirements
+
+A column called 'for_prediction' has been added:
+- for_prediction=1: These are cart events that you want predictions for
+- for_prediction=0: These are just included to satisfy the model requirements
+
+When running predictions with your Streamlit app:
+1. First run the model on the entire dataset
+2. Then filter the results to only show rows where for_prediction=1
+   (e.g., add ".filter(col('for_prediction') == 1)" before getting your final results)
+
+This approach ensures the model's encoding requirements are met while still giving you
+predictions for just the cart events.
