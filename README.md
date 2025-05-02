@@ -4,7 +4,7 @@
 ## Setting Up the Environment
 
 ### 1. Install ASDF
-If you don't have ASDF installed, follow the instructions at: https://asdf-vm.com/
+If you don't have ASDF installed, [Read the installation guide](asdf.md)
 
 ### 2. Install Required Plugins
 ```bash
