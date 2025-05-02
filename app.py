@@ -1,7 +1,7 @@
 import streamlit as st
 import pyspark
 from pyspark.sql import SparkSession, Window
-from pyspark.sql.functions import col, countDistinct, split, when, row_number, count, desc
+from pyspark.sql.functions import col, countDistinct, split, when, row_number, count, desc, rank
 from pyspark.sql.types import StructType, StructField, StringType, FloatType, IntegerType
 from pyspark.ml.classification import RandomForestClassificationModel
 from pyspark.ml.feature import StringIndexer, OneHotEncoder, VectorAssembler
@@ -14,6 +14,7 @@ import pandas as pd
 import numpy as np
 import traceback
 import builtins
+import circlify
 
 # Set page configuration
 st.set_page_config(page_title="E-commerce Analytics & Prediction", layout="wide")
@@ -252,7 +253,7 @@ with tab2:
             ax.set_ylabel("Browse Count")
             plt.xticks(rotation=45, ha='right')
             for i, v in enumerate(browsed_data['count']):
-                ax.text(i, v + 0.02 * builtins.max(browsed_data['count']), str(v), ha='center')
+                ax.text(i, v + 0.02 * builtins.max(browsed_data['count']), str(v), ha='center')  # Fixed typo: hi -> ha
             st.pyplot(fig)
 
             # Top 10 Categories Purchased
@@ -268,7 +269,7 @@ with tab2:
             ax.set_ylabel("Purchase Count")
             plt.xticks(rotation=45, ha='right')
             for i, v in enumerate(purchased_data['count']):
-                ax.text(i, v + 0.02 * builtins.max(purchased_data['count']), str(v), ha='center')
+                ax.text(i, v + 0.02 * builtins.max(purchased_data['count']), str(v), ha='center')  # Fixed typo: hi -> ha
             st.pyplot(fig)
 
             # Cart Abandonment Rate by Category
@@ -283,19 +284,109 @@ with tab2:
             df_cart_miss_rate = df_cart_miss_rate.filter((col("cart_miss_rate") > 0) & (col("cart_count") > 1000)).orderBy(desc("cart_miss_rate")).limit(10)
 
             # Debugging: Show df_cart_miss_rate
-            st.write("Debug: Cart Abandonment Rate Data")
+            # st.write("Debug: Cart Abandonment Rate Data")
             st.write(df_cart_miss_rate.toPandas())
 
             cart_miss_data = df_cart_miss_rate.toPandas()
             fig, ax = plt.subplots(figsize=(8, 8))
-            if not cart_miss_data.empty:
-                ax.pie(cart_miss_data['cart_miss_rate'], labels=cart_miss_data['category'], autopct='%1.1f%%', startangle=140)
-                ax.set_title("Cart Abandonment Rate by Category")
+            # if not cart_miss_data.empty:
+            #     ax.pie(cart_miss_data['cart_miss_rate'], labels=cart_miss_data['category'], autopct='%1.1f%%', startangle=140)
+            #     ax.set_title("Cart Abandonment Rate by Category")
+            #     st.pyplot(fig)
+            #     st.write(f"**Analysis**: The category '{cart_miss_data['category'].iloc[0]}' has the highest cart abandonment rate at {cart_miss_data['cart_miss_rate'].iloc[0]:.2f}%.")
+            # else:
+            #     st.warning("No categories meet the cart abandonment rate criteria (cart_miss_rate > 0 and cart_count > 1000).")
+            #     st.pyplot(fig)
+
+            # Circle Packing: Top Brands in Top Categories
+            status_text.text("Generating circle packing for top brands in categories...")
+            progress_bar.progress(85)
+            # Get top 3 categories by purchase count (keep as PySpark DataFrame)
+            top_categories = df_cat_purchased_count.select("category", col("count").alias("category_count")).limit(3)
+            # Get top 3 brands per category by purchase count
+            df_brand_purchased = df_purchase.filter(col("category") != "unknown").groupBy("category", "brand").count()
+            window = Window.partitionBy("category").orderBy(desc("count"))
+            top_brands = df_brand_purchased.select("*", rank().over(window).alias("rank")) \
+                                           .filter(col("rank") <= 3) \
+                                           .select("category", "brand", col("count").alias("brand_count"))
+            # Join with top categories to ensure only top 3 categories are included
+            top_brands_data = top_brands.join(top_categories.select("category"), "category", "inner").toPandas()
+            # Convert top_categories to Pandas for circlify
+            top_categories_pandas = top_categories.toPandas()
+
+            # # Debugging: Show top brands data
+            # st.write("Debug: Top Brands in Top Categories Data")
+            # st.write(top_brands_data)
+            # st.write("Debug: Top Categories Data")
+            # st.write(top_categories_pandas)
+
+            # Prepare hierarchical data for circlify
+            if not top_brands_data.empty and not top_categories_pandas.empty:
+                data = [{
+                    'id': 'E-commerce',
+                    'datum': top_categories_pandas['category_count'].sum(),
+                    'children': [
+                        {
+                            'id': category,
+                            'datum': row['category_count'],
+                            'children': [
+                                {'id': brand_row['brand'], 'datum': brand_row['brand_count']}
+                                for _, brand_row in top_brands_data[top_brands_data['category'] == category][['brand', 'brand_count']].iterrows()
+                            ]
+                        }
+                        for _, row in top_categories_pandas.iterrows()
+                        for category in [row['category']]
+                    ]
+                }]
+
+                # Compute circle positions
+                circles = circlify.circlify(
+                    data,
+                    show_enclosure=False,
+                    target_enclosure=circlify.Circle(x=0, y=0, r=1)
+                )
+
+                # Create plot
+                fig, ax = plt.subplots(figsize=(10, 10))
+                ax.set_title("Top Brands in Top Categories")
+                ax.axis('off')
+
+                # Find axis boundaries
+                lim = max(
+                    max(abs(circle.x) + circle.r, abs(circle.y) + circle.r)
+                    for circle in circles
+                )
+                plt.xlim(-lim, lim)
+                plt.ylim(-lim, lim)
+
+                # Plot circles for categories (level 2)
+                for circle in circles:
+                    if circle.level != 2:
+                        continue
+                    x, y, r = circle
+                    ax.add_patch(plt.Circle((x, y), r, alpha=0.5, linewidth=2, color="lightblue"))
+
+                # Plot circles and labels for brands (level 3)
+                for circle in circles:
+                    if circle.level != 3:
+                        continue
+                    x, y, r = circle
+                    label = circle.ex["id"]
+                    ax.add_patch(plt.Circle((x, y), r, alpha=0.5, linewidth=2, color="#69b3a2"))
+                    plt.annotate(label, (x, y), ha='center', va='center', color="white", fontsize=8)
+
+                # Plot labels for categories
+                for circle in circles:
+                    if circle.level != 2:
+                        continue
+                    x, y, r = circle
+                    label = circle.ex["id"]
+                    plt.annotate(label, (x, y), ha='center', va='center', bbox=dict(facecolor='white', edgecolor='black', boxstyle='round', pad=.5))
+
                 st.pyplot(fig)
-                st.write(f"**Analysis**: The category '{cart_miss_data['category'].iloc[0]}' has the highest cart abandonment rate at {cart_miss_data['cart_miss_rate'].iloc[0]:.2f}%.")
+                st.write("**Analysis**: Circle packing shows the top 3 brands within the top 3 categories by purchase count. Larger circles indicate higher purchase counts.")
             else:
-                st.warning("No categories meet the cart abandonment rate criteria (cart_miss_rate > 0 and cart_count > 1000).")
-                st.pyplot(fig)
+                st.warning("Insufficient data to generate circle packing visualization (no top categories or brands available).")
 
             # Purchase Trends Across the Month
             status_text.text("Analyzing purchase trends...")
