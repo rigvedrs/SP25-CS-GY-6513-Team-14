@@ -1,0 +1,48 @@
+[theme]
+# Inheriting from the light theme for a clean, professional look
+base = "light"
+
+# NYU purple as the primary accent color
+primaryColor = "#57068C"
+
+# Light gray background for a neutral, clean canvas
+backgroundColor = "#F5F5F5"
+
+# Slightly darker purple-tinted gray for interactive widgets
+secondaryBackgroundColor = "#E6E0FA"
+
+# Dark gray for text to ensure high contrast and readability
+textColor = "#333333"
+
+# Deep purple for links to maintain theme consistency
+linkColor = "#3F2A6B"
+
+# Light purple background for code blocks to differentiate them
+codeBackgroundColor = "#F2E8FF"
+
+# Retaining sans-serif font for a modern, clean appearance
+font = "sans-serif"
+
+# Monospace for code in sidebar, aligning with standard coding aesthetics
+codeFont = "monospace"
+
+# Using font for headings to maintain consistency
+headingFont = "sans-serif"
+
+# No custom fonts defined, relying on system fonts
+fontFaces = []
+
+# Medium radius for subtle rounded corners
+baseRadius = "medium"
+
+# Light purple border for subtle element separation
+borderColor = "#D3C8E5"
+
+# Enabling widget borders for clarity
+showWidgetBorder = true
+
+# Default font size for balanced scaling
+baseFontSize = 16
+
+# Showing sidebar border for clear separation
+showSidebarBorder = true

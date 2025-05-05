@@ -241,16 +241,20 @@ with tab2:
                     textinfo="value+percent initial",
                     marker=dict(color=["#FFD700", "#FF6347", "#32CD32"]),
                     connector={"line": {"color": "#444", "width": 2}},
-                    hoverinfo="x+y+percent initial"
+                    hoverinfo="x+y+percent initial",
+                    textfont=dict(color="#000000")  # Set funnel text to dark black
                 ))
                 fig_funnel.update_layout(
                     title="User Behavior Funnel",
                     title_x=0.5,
+                    title_font=dict(color="#000000"),  # Set title text to dark black
                     showlegend=False,
                     height=400,
                     margin=dict(l=20, r=20, t=50, b=20),
                     paper_bgcolor="rgba(0,0,0,0)",
-                    plot_bgcolor="rgba(0,0,0,0)"
+                    plot_bgcolor="rgba(0,0,0,0)",
+                    xaxis=dict(tickfont=dict(color="#000000")),  # Set x-axis tick labels to dark black
+                    yaxis=dict(tickfont=dict(color="#000000"))   # Set y-axis tick labels to dark black
                 )
                 st.plotly_chart(fig_funnel, use_container_width=True)
 
@@ -268,12 +272,19 @@ with tab2:
                     text='count',
                     color_discrete_sequence=['#4682B4']
                 )
-                fig_browsed.update_traces(textposition='outside', marker=dict(line=dict(color='#000', width=1)))
+                fig_browsed.update_traces(
+                    textposition='outside',
+                    marker=dict(line=dict(color='#000', width=1)),
+                    textfont=dict(color="#000000")  # Set bar text to dark black
+                )
                 fig_browsed.update_layout(
                     title="Top 10 Categories Browsed",
+                    title_font=dict(color="#000000"),  # Set title text to dark black
                     xaxis_title="Category",
                     yaxis_title="Browse Count",
                     xaxis_tickangle=45,
+                    xaxis=dict(tickfont=dict(color="#000000")),  # Set x-axis tick labels to dark black
+                    yaxis=dict(tickfont=dict(color="#000000")),  # Set y-axis tick labels to dark black
                     height=400,
                     margin=dict(l=20, r=20, t=50, b=20),
                     paper_bgcolor="rgba(0,0,0,0)",
@@ -283,7 +294,7 @@ with tab2:
 
             # Top 10 Categories Purchased
             with col1:
-                status_text.text("Analyzing top categories purchased...")
+                status_text.text("Analyzing top categories that may be purchased...")
                 progress_bar.progress(70)
                 df_cat_purchased = df_purchase.filter(col("category") != "unknown")
                 df_cat_purchased_count = df_cat_purchased.groupBy("category").count().orderBy(desc("count")).limit(10)
@@ -295,12 +306,19 @@ with tab2:
                     text='count',
                     color_discrete_sequence=['#228B22']
                 )
-                fig_purchased.update_traces(textposition='outside', marker=dict(line=dict(color='#000', width=1)))
+                fig_purchased.update_traces(
+                    textposition='outside',
+                    marker=dict(line=dict(color='#000', width=1)),
+                    textfont=dict(color="#000000")  # Set bar text to dark black
+                )
                 fig_purchased.update_layout(
                     title="Top 10 Categories Purchased",
+                    title_font=dict(color="#000000"),  # Set title text to dark black
                     xaxis_title="Category",
                     yaxis_title="Purchase Count",
                     xaxis_tickangle=45,
+                    xaxis=dict(tickfont=dict(color="#000000")),  # Set x-axis tick labels to dark black
+                    yaxis=dict(tickfont=dict(color="#000000")),  # Set y-axis tick labels to dark black
                     height=400,
                     margin=dict(l=20, r=20, t=50, b=20),
                     paper_bgcolor="rgba(0,0,0,0)",
@@ -347,26 +365,28 @@ with tab2:
                             fig.add_shape(type="circle", xref="x", yref="y", x0=x-r, y0=y-r, x1=x+r, y1=y+r,
                                             fillcolor="lightblue", opacity=0.5, line=dict(width=2))
                             fig.add_annotation(x=x, y=y, text=circle.ex["id"], showarrow=False,
-                                                font=dict(size=12, color="black"), bgcolor="white", bordercolor="black", borderpad=4)
+                                                font=dict(size=12, color="#000000"),  # Set annotation text to dark black
+                                                bgcolor="white", bordercolor="black", borderpad=4)
                         elif circle.level == 3:  # Brands
                             x, y, r = circle
                             fig.add_shape(type="circle", xref="x", yref="y", x0=x-r, y0=y-r, x1=x+r, y1=y+r,
                                             fillcolor="#69b3a2", opacity=0.7, line=dict(width=2))
                             fig.add_annotation(x=x, y=y, text=circle.ex["id"], showarrow=False,
-                                                font=dict(size=10, color="white"))
+                                                font=dict(size=10, color="#000000"))  # Set annotation text to dark black
 
                     lim = max(max(abs(circle.x) + circle.r, abs(circle.y) + circle.r) for circle in circles)
                     fig.update_layout(
                         title="Top Brands in Top Categories",
                         title_x=0.5,
+                        title_font=dict(color="#000000"),  # Set title text to dark black
                         showlegend=False,
-                        xaxis=dict(visible=False, range=[-lim, lim]),
-                        yaxis=dict(visible=False, range=[-lim, lim]),
+                        xaxis=dict(visible=False, range=[-lim, lim], tickfont=dict(color="#000000")),  # Set x-axis tick labels to dark black
+                        yaxis=dict(visible=False, range=[-lim, lim], tickfont=dict(color="#000000")),  # Set y-axis tick labels to dark black
                         height=450,
                         margin=dict(l=20, r=20, t=50, b=20)
                     )
                     st.plotly_chart(fig, use_container_width=True)
-                    st.write("**Analysis**: Larger circles indicate higher purchase counts for brands within top categories.")
+                    st.write("**Note**: Larger circles indicate higher purchase counts for brands within top categories.")
                 else:
                     st.warning("Insufficient data to generate circle packing visualization.")
 
@@ -376,17 +396,24 @@ with tab2:
             df_purchase_date_count = df_purchase.groupBy("Day").count().orderBy("Day")
             date_data = df_purchase_date_count.toPandas()
             fig_trends = px.bar(
-                date_data,
+                data_frame=date_data,
                 x='Day',
                 y='count',
                 text='count',
                 color_discrete_sequence=['#9932CC']
             )
-            fig_trends.update_traces(textposition='outside', marker=dict(line=dict(color='#000', width=1)))
+            fig_trends.update_traces(
+                textposition='outside',
+                marker=dict(line=dict(color='#000', width=1)),
+                textfont=dict(color="#000000")  # Set bar text to dark black
+            )
             fig_trends.update_layout(
                 title="Purchase Trends Across the Month",
+                title_font=dict(color="#000000"),  # Set title text to dark black
                 xaxis_title="Day of Month",
                 yaxis_title="Purchase Count",
+                xaxis=dict(tickfont=dict(color="#000000")),  # Set x-axis tick labels to dark black
+                yaxis=dict(tickfont=dict(color="#000000")),  # Set y-axis tick labels to dark black
                 height=400,
                 margin=dict(l=20, r=20, t=50, b=20),
                 paper_bgcolor="rgba(0,0,0,0)",
@@ -406,26 +433,32 @@ with tab2:
             fig_prime = go.Figure()
             fig_prime.add_trace(go.Bar(
                 x=hour_data['Hour'], y=hour_data['view_count'], name='View',
-                marker_color='#FFD700', text=hour_data['view_count'], textposition='none'
+                marker_color='#FFD700', text=hour_data['view_count'], textposition='none',
+                textfont=dict(color="#000000")  # Set bar text to dark black
             ))
             fig_prime.add_trace(go.Bar(
                 x=hour_data['Hour'], y=hour_data['cart_count'], name='Cart',
-                marker_color='#FF6347', text=hour_data['cart_count'], textposition='none'
+                marker_color='#FF6347', text=hour_data['cart_count'], textposition='none',
+                textfont=dict(color="#000000")  # Set bar text to dark black
             ))
             fig_prime.add_trace(go.Bar(
                 x=hour_data['Hour'], y=hour_data['purchase_count'], name='Purchase',
-                marker_color='#32CD32', text=hour_data['purchase_count'], textposition='none'
+                marker_color='#32CD32', text=hour_data['purchase_count'], textposition='none',
+                textfont=dict(color="#000000")  # Set bar text to dark black
             ))
             fig_prime.update_layout(
                 title="E-commerce Prime Time",
+                title_font=dict(color="#000000"),  # Set title text to dark black
                 xaxis_title="Hour of Day",
                 yaxis_title="Count",
+                xaxis=dict(tickfont=dict(color="#000000")),  # Set x-axis tick labels to dark black
+                yaxis=dict(tickfont=dict(color="#000000")),  # Set y-axis tick labels to dark black
                 barmode='stack',
                 height=400,
                 margin=dict(l=20, r=20, t=50, b=20),
                 paper_bgcolor="rgba(0,0,0,0)",
                 plot_bgcolor="rgba(0,0,0,0)",
-                legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="center", x=0.5)
+                legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="center", x=0.5, font=dict(color="#000000"))  # Set legend text to dark black
             )
             st.plotly_chart(fig_prime, use_container_width=True)
             st.write("**Analysis**: Peak activity occurs around 16:00. A flash sale from 13:00 to 16:00 could increase impulse purchases.")
