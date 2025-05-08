@@ -328,99 +328,38 @@ with tab2:
 
             # Circle Packing
             with col2:
-                st.markdown("#### Top Brands in Top Categories")
-                top_categories = df_cat_purchased_count.select("category", col("count").alias("category_count")).limit(3)
-                df_brand_purchased = df_purchase.filter(col("category") != "unknown").groupBy("category", "brand").count()
-                window = Window.partitionBy("category").orderBy(desc("count"))
-                top_brands = df_brand_purchased.select("*", rank().over(window).alias("rank")) \
-                                                .filter(col("rank") <= 3) \
-                                                .select("category", "brand", col("count").alias("brand_count"))
-                top_brands_data = top_brands.join(top_categories.select("category"), "category", "inner").toPandas()
-                top_categories_pandas = top_categories.toPandas()
 
-                if not top_brands_data.empty and not top_categories_pandas.empty:
-                    data = [{
-                        'id': 'E-commerce',
-                        'datum': top_categories_pandas['category_count'].sum(),
-                        'children': [
-                            {
-                                'id': category,
-                                'datum': row['category_count'],
-                                'children': [
-                                    {'id': brand_row['brand'], 'datum': brand_row['brand_count']}
-                                    for _, brand_row in top_brands_data[top_brands_data['category'] == category][['brand', 'brand_count']].iterrows()
-                                ]
-                            }
-                            for _, row in top_categories_pandas.iterrows()
-                            for category in [row['category']]
-                        ]
-                    }]
-
-                    circles = circlify.circlify(data, show_enclosure=False, target_enclosure=circlify.Circle(x=0, y=0, r=1))
-                    fig = go.Figure()
-
-                    for circle in circles:
-                        if circle.level == 2:  # Categories
-                            x, y, r = circle
-                            fig.add_shape(type="circle", xref="x", yref="y", x0=x-r, y0=y-r, x1=x+r, y1=y+r,
-                                            fillcolor="lightblue", opacity=0.5, line=dict(width=2))
-                            fig.add_annotation(x=x, y=y, text=circle.ex["id"], showarrow=False,
-                                                font=dict(size=12, color="#000000"),  # Set annotation text to dark black
-                                                bgcolor="white", bordercolor="black", borderpad=4)
-                        elif circle.level == 3:  # Brands
-                            x, y, r = circle
-                            fig.add_shape(type="circle", xref="x", yref="y", x0=x-r, y0=y-r, x1=x+r, y1=y+r,
-                                            fillcolor="#69b3a2", opacity=0.7, line=dict(width=2))
-                            fig.add_annotation(x=x, y=y, text=circle.ex["id"], showarrow=False,
-                                                font=dict(size=10, color="#000000"))  # Set annotation text to dark black
-
-                    lim = max(max(abs(circle.x) + circle.r, abs(circle.y) + circle.r) for circle in circles)
-                    fig.update_layout(
-                        title="Top Brands in Top Categories",
-                        title_x=0.5,
-                        title_font=dict(color="#000000"),  # Set title text to dark black
-                        showlegend=False,
-                        xaxis=dict(visible=False, range=[-lim, lim], tickfont=dict(color="#000000")),  # Set x-axis tick labels to dark black
-                        yaxis=dict(visible=False, range=[-lim, lim], tickfont=dict(color="#000000")),  # Set y-axis tick labels to dark black
-                        height=450,
-                        margin=dict(l=20, r=20, t=50, b=20)
-                    )
-                    st.plotly_chart(fig, use_container_width=True)
-                    st.write("**Note**: Larger circles indicate higher purchase counts for brands within top categories.")
-                else:
-                    st.warning("Insufficient data to generate circle packing visualization.")
-
-            # Purchase Trends
-            status_text.text("Analyzing purchase trends...")
-            progress_bar.progress(90)
-            df_purchase_date_count = df_purchase.groupBy("Day").count().orderBy("Day")
-            date_data = df_purchase_date_count.toPandas()
-            fig_trends = px.bar(
-                data_frame=date_data,
-                x='Day',
-                y='count',
-                text='count',
-                color_discrete_sequence=['#9932CC']
-            )
-            fig_trends.update_traces(
-                textposition='outside',
-                marker=dict(line=dict(color='#000', width=1)),
-                textfont=dict(color="#000000")  # Set bar text to dark black
-            )
-            fig_trends.update_layout(
-                title="Purchase Trends Across the Month",
-                title_font=dict(color="#000000"),  # Set title text to dark black
-                xaxis_title="Day of Month",
-                yaxis_title="Purchase Count",
-                xaxis=dict(tickfont=dict(color="#000000")),  # Set x-axis tick labels to dark black
-                yaxis=dict(tickfont=dict(color="#000000")),  # Set y-axis tick labels to dark black
-                height=400,
-                margin=dict(l=20, r=20, t=50, b=20),
-                paper_bgcolor="rgba(0,0,0,0)",
-                plot_bgcolor="rgba(0,0,0,0)"
-            )
-            st.plotly_chart(fig_trends, use_container_width=True)
-            st.write("**Analysis**: Purchase interest peaks around mid-month (days 11-16). Consider mid-month sales to boost conversions.")
+                # Purchase Trends
+                status_text.text("Analyzing purchase trends...")
+                progress_bar.progress(90)
+                df_purchase_date_count = df_purchase.groupBy("Day").count().orderBy("Day")
+                date_data = df_purchase_date_count.toPandas()
+                fig_trends = px.bar(
+                    data_frame=date_data,
+                    x='Day',
+                    y='count',
+                    text='count',
+                    color_discrete_sequence=['#9932CC']
+                )
+                fig_trends.update_traces(
+                    textposition='outside',
+                    marker=dict(line=dict(color='#000', width=1)),
+                    textfont=dict(color="#000000")  # Set bar text to dark black
+                )
+                fig_trends.update_layout(
+                    title="Purchase Trends Across the Month",
+                    title_font=dict(color="#000000"),  # Set title text to dark black
+                    xaxis_title="Day of Month",
+                    yaxis_title="Purchase Count",
+                    xaxis=dict(tickfont=dict(color="#000000")),  # Set x-axis tick labels to dark black
+                    yaxis=dict(tickfont=dict(color="#000000")),  # Set y-axis tick labels to dark black
+                    height=400,
+                    margin=dict(l=20, r=20, t=50, b=20),
+                    paper_bgcolor="rgba(0,0,0,0)",
+                    plot_bgcolor="rgba(0,0,0,0)"
+                )
+                st.plotly_chart(fig_trends, use_container_width=True)
+                st.write("**Analysis**: Purchase interest peaks around mid-month (days 11-16). Consider mid-month sales to boost conversions.")
 
             # E-commerce Prime Time
             status_text.text("Analyzing prime time...")
